@@ -8,28 +8,17 @@ use Silex\Application;
 /**
  * @SLX\Controller(prefix="product/")
  */
-class ProductController {
-
-    /**
-     * @SLX\Route(
-     *      @SLX\Request(method="GET", uri="/{id}")
-     * )
+class ProductController {    
+ 
+    /**  
      * @param Application $app
-     * @param $name
+     * @param $id
      * @return
      */
     public function getById_GET(Application $app, $id){
-        $curl = curl_init();
-        $requestData = array();
-        $requestData['id'] = $id;
-        curl_setopt($curl, CURLOPT_URL,  'http://192.168.0.241/eanlist?type=Web');
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $requestData);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        $response = curl_exec($curl);
-        $response = json_decode($response);
-        curl_close($curl);
+        $response = $this->curl_connect(["id" => $id]);        
         $result = [];
+        
         for ($i =0; $i < count($response) ;$i++) {
             $prod = array();
             $prod['ean'] =$response[$i]['barcode'];
@@ -45,30 +34,20 @@ class ProductController {
             }
             $result[] = $prod;
         }
-
+        
         return $app->render('products/product.detail.twig', $result);
     }
 
     /**
-     * @SLX\Route(
-     *      @SLX\Request(method="GET", uri="/search/{name}")
-     * )
+    
      * @param Application $app
      * @param $name
      * @return
      */
     public function getByName_GET(Application $app, $name){
-        $curl = curl_init();
-        $requestData = array();
-        $requestData['names'] = $name;
-        curl_setopt($curl, CURLOPT_URL,  'http://192.168.0.241/eanlist?type=Web');
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $requestData);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        $response = curl_exec($curl);
-        $response = json_decode($response);
-        curl_close($curl);
+        $response = $this->curl_connect(["name" => $name]);
         $result = [];
+       
         for ($i =0; $i < count($response) ;$i++) {
             $prod = array();
             $prod['ean'] = $response[$i]['barcode'];
@@ -86,6 +65,42 @@ class ProductController {
         }
 
         return $app->render('products/products.twig', $result);
+    }
+    
+    /**
+     * @SLX\Route(
+     *      @SLX\Request(method="GET", uri="/{id}")
+     * )
+     * @param$option
+     * @param $name
+     * @return
+     */
+    public function api_connect($option = []){
+        // options
+        $options = array_merge([
+                "name" => false,
+                "id" => false,
+        ], $options);
+        
+        $curl = curl_init();
+        $requestData = array();
+        
+        if ($options["id"]) {
+             $requestData['id'] = $options["id"];
+        }        
+        if ($options["name"]) {
+             $requestData['name'] = $options["name"];
+        }
+        
+        curl_setopt($curl, CURLOPT_URL,  'http://192.168.0.241/eanlist?type=Web');
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $requestData);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($curl);
+        $response = json_decode($this->response);
+        curl_close($curl);
+        
+        return $response;
     }
 
 }
